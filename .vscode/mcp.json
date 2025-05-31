@@ -1,0 +1,12 @@
+{
+    "servers": {
+        "postgres-test": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@modelcontextprotocol/server-postgres",
+                "postgresql://willokans-mac-mini:slide05@localhost:5432/theurllist"
+            ]
+        }
+    }
+}

@@ -1,0 +1,43 @@
+---
+interface Props {
+  error?: string;
+}
+
+const { error } = Astro.props;
+---
+
+<form id="urlForm" class="space-y-4">
+  <div>
+    <label for="url" class="block text-sm font-medium text-gray-700">Add URL</label>
+    <div class="mt-1">
+      <input
+        type="url"
+        name="url"
+        id="url"
+        required
+        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 sm:text-sm"
+        placeholder="https://example.com"
+      />
+    </div>
+    {error && <p class="mt-2 text-sm text-red-600">{error}</p>}
+  </div>
+
+  <button
+    type="submit"
+    class="inline-flex justify-center rounded-md border border-transparent bg-purple-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+  >
+    Add to List
+  </button>
+</form>
+
+<script>
+  const form = document.getElementById('urlForm') as HTMLFormElement;
+  const urlInput = document.getElementById('url') as HTMLInputElement;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const url = urlInput.value;
+    window.dispatchEvent(new CustomEvent('addUrl', { detail: { url } }));
+    urlInput.value = '';
+  });
+</script>

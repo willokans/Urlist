@@ -1,0 +1,89 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import prisma from '../../../lib/prisma';
+import { verifyGithubCode, generateToken } from '../../../lib/auth';
+
+const code = Astro.url.searchParams.get('code');
+let error = '';
+
+if (!code) {
+  return Astro.redirect('/auth/login');
+}
+
+try {
+  const githubUser = await verifyGithubCode(code);
+  
+  if (!githubUser.email) {
+    error = 'GitHub account must have a public email address.';
+  } else {
+    // Check if user exists by GitHub ID or email
+    let user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { githubId: githubUser.githubId },
+          { email: githubUser.email }
+        ]
+      }
+    });
+
+    if (user) {
+      // Update GitHub ID if not set
+      if (!user.githubId) {
+        user = await prisma.user.update({
+          where: { id: user.id },
+          data: { githubId: githubUser.githubId }
+        });
+      }
+    } else {
+      // Create new user
+      user = await prisma.user.create({
+        data: {
+          email: githubUser.email,
+          name: githubUser.name,
+          githubId: githubUser.githubId,
+          emailVerified: new Date() // Auto-verify GitHub users
+        }
+      });
+    }
+
+    // Generate token and set cookie
+    const token = generateToken({ id: user.id, email: user.email });
+    Astro.cookies.set('auth_token', token, {
+      path: '/',
+      httpOnly: true,
+      secure: true,
+      sameSite: 'strict',
+      maxAge: 60 * 60 * 24 * 7 // 7 days
+    });
+
+    return Astro.redirect('/lists');
+  }
+} catch (e) {
+  error = 'An error occurred during GitHub authentication.';
+  console.error('GitHub auth error:', e);
+}
+---
+
+<Layout title="GitHub Login">
+  <div class="min-h-[50vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full">
+      <div class="rounded-md bg-red-50 p-4">
+        <div class="flex">
+          <div class="ml-3">
+            <h3 class="text-sm font-medium text-red-800">
+              {error}
+            </h3>
+          </div>
+        </div>
+      </div>
+      <div class="mt-6 text-center">
+        <a
+          href="/auth/login"
+          class="text-sm font-medium text-purple-600 hover:text-purple-500"
+        >
+          Back to login
+        </a>
+      </div>
+    </div>
+  </div>
+</Layout>

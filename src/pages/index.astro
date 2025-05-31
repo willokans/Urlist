@@ -1,0 +1,34 @@
+---
+import Layout from '../layouts/Layout.astro';
+import '../styles/global.css';
+---
+
+<Layout title="Welcome">
+  <div class="relative isolate">
+    <div class="mx-auto max-w-3xl pt-20 sm:pt-28 lg:pt-32">
+      <div class="text-center">
+        <h1 class="text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl bg-gradient-to-b from-gray-900 to-gray-600 bg-clip-text text-transparent">
+          Share your URLs with ease
+        </h1>
+        <p class="mt-6 text-lg leading-8 text-gray-600 max-w-2xl mx-auto">
+          Create and share collections of URLs with The Urlist. Perfect for sharing
+          resources, bookmarks, and references.
+        </p>
+        <div class="mt-10 flex items-center justify-center gap-x-6">
+          <a
+            href="/lists/new"
+            class="rounded-full bg-gradient-to-r from-purple-600 to-purple-500 px-5 py-3 text-base font-semibold text-white shadow-sm hover:from-purple-500 hover:to-purple-400 transition-colors"
+          >
+            Create New List
+          </a>
+          <a href="/lists" class="text-base font-semibold leading-6 text-gray-900 hover:text-purple-600 transition-colors group">
+            View My Lists <span aria-hidden="true" class="inline-block transition-transform group-hover:translate-x-1">→</span>
+          </a>
+        </div>
+      </div>
+    </div>
+    <div class="absolute inset-x-0 top-[calc(100%-13rem)] -z-10 transform-gpu overflow-hidden blur-3xl sm:top-[calc(100%-30rem)]">
+      <div class="relative left-[calc(50%+3rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 bg-gradient-to-tr from-[#ff80b5] to-[#9089fc] opacity-20 sm:left-[calc(50%+36rem)] sm:w-[72.1875rem]"></div>
+    </div>
+  </div>
+</Layout>

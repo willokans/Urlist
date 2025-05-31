@@ -1,0 +1,61 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import prisma from '../../../lib/prisma';
+
+const { token } = Astro.params;
+let message = '';
+let error = false;
+
+if (token) {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { verifyToken: token }
+    });
+
+    if (user) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          emailVerified: new Date(),
+          verifyToken: null
+        }
+      });
+      message = 'Email verified successfully! You can now sign in.';
+    } else {
+      error = true;
+      message = 'Invalid or expired verification token.';
+    }
+  } catch (e) {
+    error = true;
+    message = 'An error occurred while verifying your email.';
+    console.error('Verification error:', e);
+  }
+} else {
+  error = true;
+  message = 'No verification token provided.';
+}
+---
+
+<Layout title="Verify Email">
+  <div class="min-h-[50vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full">
+      <div class={`rounded-md ${error ? 'bg-red-50' : 'bg-green-50'} p-4`}>
+        <div class="flex">
+          <div class="ml-3">
+            <h3 class={`text-sm font-medium ${error ? 'text-red-800' : 'text-green-800'}`}>
+              {message}
+            </h3>
+          </div>
+        </div>
+      </div>
+      <div class="mt-6 text-center">
+        <a
+          href="/auth/login"
+          class="text-sm font-medium text-purple-600 hover:text-purple-500"
+        >
+          Go to login
+        </a>
+      </div>
+    </div>
+  </div>
+</Layout>

@@ -1,0 +1,134 @@
+---
+import '../styles/global.css';
+import { authenticateUser } from '../lib/middleware';
+
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+const user = await authenticateUser(Astro);
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title} - The Urlist</title>
+  </head>
+  <body class="min-h-screen bg-gradient-to-b from-gray-50 to-white flex flex-col">
+    <header class="bg-white/80 backdrop-blur-sm sticky top-0 z-50 border-b border-gray-100">
+      <nav class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="flex h-16 justify-between items-center">
+          <div class="flex-shrink-0">
+            <a href="/" class="text-2xl font-bold bg-gradient-to-r from-purple-600 to-purple-500 bg-clip-text text-transparent hover:from-purple-500 hover:to-purple-400 transition-colors">The Urlist</a>
+          </div>
+          <!-- Desktop navigation -->
+          <div class="hidden sm:ml-6 sm:flex sm:items-center sm:space-x-8">
+            <a href="/" class="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-600 hover:text-purple-600 transition-colors">
+              Home
+            </a>
+            {user ? (
+              <>
+                <a href="/lists" class="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-600 hover:text-purple-600 transition-colors">
+                  My Lists
+                </a>
+                {user && (
+                  <a href="/notifications" class="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-600 hover:text-purple-600 transition-colors">
+                    Notifications
+                    {(await import('../lib/notifications').then(m => m.getUnreadCount())) > 0 && (
+                      <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                        New
+                      </span>
+                    )}
+                  </a>
+                )}
+                <form method="POST" action="/auth/logout">
+                  <button type="submit" class="inline-flex items-center px-4 py-2 border border-gray-200 text-sm font-medium rounded-full text-gray-600 hover:text-purple-600 hover:border-purple-600 transition-all">
+                    Sign Out
+                  </button>
+                </form>
+              </>
+            ) : (
+              <>
+                <a href="/auth/login" class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-purple-600 hover:text-purple-700">
+                  Sign In
+                </a>
+                <a href="/auth/register" class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700">
+                  Sign Up
+                </a>
+              </>
+            )}
+          </div>
+          <!-- Mobile navigation button -->
+          <div class="sm:hidden">
+            <button type="button" class="mobile-menu-button inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-purple-500" aria-controls="mobile-menu" aria-expanded="false">
+              <span class="sr-only">Open main menu</span>
+              <svg class="block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <!-- Mobile menu -->
+        <div class="sm:hidden hidden" id="mobile-menu">
+          <div class="pt-2 pb-3 space-y-1">
+            <a href="/" class="text-gray-600 hover:text-purple-600 block px-3 py-2 rounded-md text-base font-medium">Home</a>
+            {user ? (
+              <>
+                <a href="/lists" class="text-gray-600 hover:text-purple-600 block px-3 py-2 rounded-md text-base font-medium">My Lists</a>
+                {user && (
+                  <a href="/notifications" class="text-gray-600 hover:text-purple-600 block px-3 py-2 rounded-md text-base font-medium">
+                    Notifications
+                    {(await import('../lib/notifications').then(m => m.getUnreadCount())) > 0 && (
+                      <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                        New
+                      </span>
+                    )}
+                  </a>
+                )}
+                <form method="POST" action="/auth/logout">
+                  <button type="submit" class="w-full text-left text-gray-600 hover:text-purple-600 block px-3 py-2 rounded-md text-base font-medium">Sign Out</button>
+                </form>
+              </>
+            ) : (
+              <>
+                <a href="/auth/login" class="text-gray-600 hover:text-purple-600 block px-3 py-2 rounded-md text-base font-medium">Sign In</a>
+                <a href="/auth/register" class="text-purple-600 hover:text-purple-700 block px-3 py-2 rounded-md text-base font-medium">Sign Up</a>
+              </>
+            )}
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+      <slot />
+    </main>
+
+    <footer class="bg-white mt-auto">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+        <p class="text-center text-sm text-gray-500">
+          &copy; {new Date().getFullYear()} The Urlist. All rights reserved.
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>
+
+<script>
+  // Mobile menu toggle
+  const mobileMenuButton = document.querySelector('.mobile-menu-button');
+  const mobileMenu = document.querySelector('#mobile-menu');
+
+  if (mobileMenuButton && mobileMenu) {
+    mobileMenuButton.addEventListener('click', () => {
+      mobileMenu.classList.toggle('hidden');
+      const expanded = mobileMenuButton.getAttribute('aria-expanded') === 'true';
+      mobileMenuButton.setAttribute('aria-expanded', (!expanded).toString());
+    });
+  }
+</script>

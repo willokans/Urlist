@@ -1,0 +1,136 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import prisma from '../../../lib/prisma';
+import { hashPassword } from '../../../lib/auth';
+
+const { token } = Astro.params;
+let error = '';
+let success = false;
+
+if (!token) {
+  return Astro.redirect('/404');
+}
+
+// Verify token on page load
+const user = await prisma.user.findUnique({
+  where: { resetToken: token }
+});
+
+if (!user || !user.resetTokenExp || user.resetTokenExp < new Date()) {
+  error = 'Invalid or expired reset token.';
+}
+
+// Handle form submission
+if (Astro.request.method === 'POST' && !error) {
+  try {
+    const formData = await Astro.request.formData();
+    const password = formData.get('password')?.toString();
+    const confirmPassword = formData.get('confirmPassword')?.toString();
+
+    if (!password || !confirmPassword) {
+      error = 'Both password fields are required';
+    } else if (password !== confirmPassword) {
+      error = 'Passwords do not match';
+    } else {
+      const hashedPassword = await hashPassword(password);
+      
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          hashedPassword,
+          resetToken: null,
+          resetTokenExp: null
+        }
+      });
+
+      success = true;
+    }
+  } catch (e) {
+    error = 'An error occurred. Please try again.';
+    console.error('Password reset error:', e);
+  }
+}
+---
+
+<Layout title="Reset Password">
+  <div class="min-h-[50vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8">
+      <div>
+        <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          Reset your password
+        </h2>
+      </div>
+
+      {success ? (
+        <div>
+          <div class="rounded-md bg-green-50 p-4">
+            <div class="flex">
+              <div class="ml-3">
+                <h3 class="text-sm font-medium text-green-800">
+                  Password reset successfully!
+                </h3>
+              </div>
+            </div>
+          </div>
+          <div class="mt-6 text-center">
+            <a
+              href="/auth/login"
+              class="text-sm font-medium text-purple-600 hover:text-purple-500"
+            >
+              Go to login
+            </a>
+          </div>
+        </div>
+      ) : (
+        <form class="mt-8 space-y-6" method="POST">
+          {error && (
+            <div class="rounded-md bg-red-50 p-4">
+              <div class="flex">
+                <div class="ml-3">
+                  <h3 class="text-sm font-medium text-red-800">{error}</h3>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div class="rounded-md shadow-sm -space-y-px">
+            <div>
+              <label for="password" class="sr-only">New password</label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                required
+                class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-purple-500 focus:border-purple-500 focus:z-10 sm:text-sm"
+                placeholder="New password"
+                disabled={!!error}
+              />
+            </div>
+            <div>
+              <label for="confirmPassword" class="sr-only">Confirm password</label>
+              <input
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                required
+                class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-purple-500 focus:border-purple-500 focus:z-10 sm:text-sm"
+                placeholder="Confirm password"
+                disabled={!!error}
+              />
+            </div>
+          </div>
+
+          <div>
+            <button
+              type="submit"
+              class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={!!error}
+            >
+              Reset password
+            </button>
+          </div>
+        </form>
+      )}
+    </div>
+  </div>
+</Layout>

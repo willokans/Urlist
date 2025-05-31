@@ -1,0 +1,73 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import NotificationsList from '../../components/NotificationsList.astro';
+import { getNotifications, markNotificationAsRead } from '../../lib/notifications';
+import { requireAuth } from '../../lib/middleware';
+
+// Ensure user is authenticated
+const user = await requireAuth(Astro);
+
+// Handle marking notifications as read
+if (Astro.request.method === 'POST') {
+  const url = new URL(Astro.request.url);
+  const notificationId = url.pathname.split('/').pop();
+  if (notificationId) {
+    await markNotificationAsRead(notificationId);
+    return Astro.redirect('/notifications');
+  }
+}
+
+// Get notifications
+const notifications = await getNotifications({ limit: 50 });
+const unreadCount = notifications.filter(n => !n.read).length;
+---
+
+<Layout title="System Notifications">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="py-8">
+      <div class="sm:flex sm:items-center sm:justify-between">
+        <div class="sm:flex-auto">
+          <h1 class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-purple-500">
+            System Notifications
+          </h1>
+          <p class="mt-2 text-sm text-gray-600">
+            View system notifications and important updates.
+            {unreadCount > 0 && (
+              <span class="inline-flex items-center ml-2 px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                {unreadCount} unread {unreadCount === 1 ? 'notification' : 'notifications'}
+              </span>
+            )}
+          </p>
+        </div>
+        {unreadCount > 0 && (
+          <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
+            <form method="POST" action="/notifications/mark-all-read">
+              <button
+                type="submit"
+                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-full text-white bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-200 ease-in-out transform hover:scale-[1.02]"
+              >
+                <svg class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                Mark all as read
+              </button>
+            </form>
+          </div>
+        )}
+      </div>
+
+      <div class="mt-8">
+        {notifications.length > 0 ? (
+          <NotificationsList notifications={notifications} />
+        ) : (
+          <div class="text-center py-12 bg-white shadow-lg shadow-gray-100/50 rounded-lg border border-gray-100">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
+            <p class="mt-4 text-gray-500">You're all caught up! No new notifications.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+</Layout>
